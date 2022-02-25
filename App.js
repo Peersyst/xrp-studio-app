@@ -8,8 +8,10 @@ import {
   ScrollView,
   StatusBar,
   Text,
+  TouchableOpacity,
   View,
 } from 'react-native';
+import Clipboard from '@react-native-clipboard/clipboard';
 
 import {eraseKeys, generateKeys, nfcPerformAction, signChallenge} from './Nfc';
 import {bytesToHex} from './Util';
@@ -39,13 +41,13 @@ const App: () => Node = () => {
     initNfc();
   }, []);
 
-  React.useEffect(() => {
-    async function generateChallenge() {
-      let tmp = new Uint8Array(32);
-      crypto.getRandomValues(tmp);
-      setChallenge(tmp);
-    }
+  async function generateChallenge() {
+    let tmp = new Uint8Array(32);
+    crypto.getRandomValues(tmp);
+    setChallenge(tmp);
+  }
 
+  React.useEffect(() => {
     generateChallenge();
   }, []);
 
@@ -57,7 +59,7 @@ const App: () => Node = () => {
           '04' + bytesToHex(nfcResult.publicKey),
           'hex',
         );
-        let res = key.verify(challenge, nfcResult.signature);
+        let res = key.verify(nfcResult.challenge, nfcResult.signature);
         setVerifyResult(res);
       }
     }
@@ -83,6 +85,7 @@ const App: () => Node = () => {
       }
     }
 
+    await generateChallenge();
     setIsWorking(false);
   }
 
@@ -120,19 +123,33 @@ const App: () => Node = () => {
     setIsWorking(false);
   }
 
+  function copyPublicKeyToClipboard() {
+    Clipboard.setString(bytesToHex(nfcResult.publicKey));
+  }
+
+  function copySignatureToClipboard() {
+    let hexR = bytesToHex(nfcResult.signature.r).padStart(32, '0');
+    let hexS = bytesToHex(nfcResult.signature.s).padStart(32, '0');
+    Clipboard.setString(hexR + hexS);
+  }
+
   function renderNfcResult() {
     return (
       <View>
         <View>
-          <Text style={{color: 'black'}}>
-            Received tag's public key: {bytesToHex(nfcResult.publicKey)}
-          </Text>
+          <TouchableOpacity onPress={() => copyPublicKeyToClipboard()}>
+            <Text style={{color: 'black'}}>
+              Received tag's public key: {bytesToHex(nfcResult.publicKey)}
+            </Text>
+          </TouchableOpacity>
         </View>
         <View>
-          <Text style={{color: 'black'}}>
-            Received signature: ({bytesToHex(nfcResult.signature.r)},{' '}
-            {bytesToHex(nfcResult.signature.s)})
-          </Text>
+          <TouchableOpacity onPress={() => copySignatureToClipboard()}>
+            <Text style={{color: 'black'}}>
+              Received signature: ({bytesToHex(nfcResult.signature.r)},{' '}
+              {bytesToHex(nfcResult.signature.s)})
+            </Text>
+          </TouchableOpacity>
         </View>
         <View>
           <Text
@@ -166,14 +183,23 @@ const App: () => Node = () => {
         <View style={{backgroundColor: 'white', padding: 30}}>
           <View>
             <Text style={{color: 'black', fontSize: 36}}>
-              Dilithium NFC Tag Prototype
+              ECDSA NFC Tag Prototype
             </Text>
           </View>
-          <View>
-            <Text style={{color: 'black'}}>
-              Challenge: {challenge ? bytesToHex(challenge) : '(null)'}
-            </Text>
-          </View>
+          {nfcResult || challenge ? (
+            <View>
+              <Text style={{color: 'black'}}>
+                Challenge:{' '}
+                {nfcResult
+                  ? bytesToHex(nfcResult.challenge)
+                  : challenge
+                  ? bytesToHex(challenge)
+                  : '(null)'}
+              </Text>
+            </View>
+          ) : (
+            <View />
+          )}
           {nfcResult ? renderNfcResult() : <View />}
           <View style={{paddingTop: 30}}>
             <Button

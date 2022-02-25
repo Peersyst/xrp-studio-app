@@ -196,6 +196,7 @@ async function signChallenge(challenge) {
   console.log('signature', bytesToHex(res));
 
   return {
+    challenge: challenge,
     publicKey: pkey,
     signature: {r: res.slice(0, 32), s: res.slice(32, 64)},
   };
