@@ -46,7 +46,7 @@ async function waitUnlockNFC() {
   let success = false;
   let startTime = timeMs();
 
-  while (timeMs() - startTime < 4000) {
+  while (timeMs() - startTime < 8000) {
     try {
       let res = await iso15693Cmd(0xc0, hexToBytes('A000'));
       console.log('Config reg. A0 = ', bytesToHex(res));
@@ -161,7 +161,7 @@ async function checkConfig() {
   let startTime = timeMs();
 
   // arbiter mode = pass through, sram is accessible, transfer dir = nfc
-  while (timeMs() - startTime < 1000) {
+  while (timeMs() - startTime < 3000) {
     try {
       let res = await iso15693Cmd(0xc0, hexToBytes('A100'));
       console.log('Config reg. A1: ', bytesToHex(res));
