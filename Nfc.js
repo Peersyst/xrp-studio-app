@@ -158,12 +158,14 @@ async function doHLCommand(data) {
 
 async function checkConfig() {
   let success = false;
+  let timeout = false;
   let startTime = timeMs();
+  let res = null;
 
-  // arbiter mode = pass through, sram is accessible, transfer dir = nfc
-  while (timeMs() - startTime < 3000) {
+  // arbiter mode = pass through, SRAM is accessible, transfer dir = nfc
+  while (true) {
     try {
-      let res = await iso15693Cmd(0xc0, hexToBytes('A100'));
+      res = await iso15693Cmd(0xc0, hexToBytes('A100'));
       console.log('Config reg. A1: ', bytesToHex(res));
 
       // eslint-disable-next-line no-bitwise
@@ -175,11 +177,17 @@ async function checkConfig() {
       console.log(e);
     }
 
-    await sleep(20);
+    await sleep(Math.ceil(Math.random() * 25));
+
+    if (timeout) {
+      break;
+    } else if (timeMs() - startTime < 3000) {
+      timeout = true;
+    }
   }
 
   if (!success) {
-    throw Error('Config A1 invalid');
+    throw Error('Config A1 invalid: ' + bytesToHex(res));
   }
 }
 

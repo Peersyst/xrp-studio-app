@@ -183,7 +183,7 @@ const App: () => Node = () => {
         <View style={{backgroundColor: 'white', padding: 30}}>
           <View>
             <Text style={{color: 'black', fontSize: 36}}>
-              ECDSA NFC Tag Prototype
+              ECDSA NFC Tag Prototype (build 2022-03-08 01:10)
             </Text>
           </View>
           {nfcResult || challenge ? (
