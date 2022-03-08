@@ -181,7 +181,7 @@ async function checkConfig() {
 
     if (timeout) {
       break;
-    } else if (timeMs() - startTime < 3000) {
+    } else if (timeMs() - startTime > 3000) {
       timeout = true;
     }
   }
