@@ -4,6 +4,8 @@ import type {Node} from 'react';
 import {
   Alert,
   Button,
+  Dimensions,
+  Image,
   SafeAreaView,
   ScrollView,
   StatusBar,
@@ -19,11 +21,14 @@ import {RNCamera} from 'react-native-camera';
 import {eraseKeys, generateKeys, nfcPerformAction, signChallenge} from './Nfc';
 import {bytesToHex} from './Util';
 import {ec as EC} from 'elliptic';
+import SButton from './SButton';
 
 const App: () => Node = () => {
   const [supported, setSupported] = React.useState(null);
   const [enabled, setEnabled] = React.useState(null);
   const [isWorking, setIsWorking] = React.useState(false);
+  const [workStatusMessage, setWorkStatusMessage] = React.useState('');
+  const [currentAction, setCurrentAction] = React.useState('');
   const [nfcResult, setNfcResult] = React.useState(null);
   const [viewMode, setViewMode] = React.useState('main');
   const [publicKey, setPublicKey] = React.useState('');
@@ -87,14 +92,25 @@ const App: () => Node = () => {
     setViewMode('main');
   }
 
+  async function cancelNfcOperation() {
+    if (isWorking) {
+      await NfcManager.cancelTechnologyRequest();
+    }
+
+    setNfcResult(null);
+    setIsWorking(false);
+  }
+
   async function btnPerformSigning() {
     let result = null;
+    setCurrentAction('sign');
+    setWorkStatusMessage('PLEASE TAP TAG');
     setIsWorking(true);
     setNfcResult(null);
 
     try {
       result = await nfcPerformAction(
-        async () => await signChallenge(challenge),
+        async () => await signChallenge(challenge, setWorkStatusMessage),
       );
       setNfcResult(result);
     } catch (e) {
@@ -111,12 +127,16 @@ const App: () => Node = () => {
 
   async function btnGenerateKeys() {
     let result = null;
+    setCurrentAction('generate');
+    setWorkStatusMessage('PLEASE TAP TAG');
     setIsWorking(true);
 
     try {
-      result = await nfcPerformAction(async () => await generateKeys());
-      console.log('result', result);
+      result = await nfcPerformAction(
+        async () => await generateKeys(setWorkStatusMessage),
+      );
       setNfcResult(result);
+      Alert.alert('Done, generated a new key.');
     } catch (e) {
       if (e.message) {
         Alert.alert(e.message);
@@ -129,10 +149,12 @@ const App: () => Node = () => {
   }
 
   async function btnEraseKeys() {
+    setCurrentAction('erase');
+    setWorkStatusMessage('PLEASE TAP TAG');
     setIsWorking(true);
 
     try {
-      await nfcPerformAction(async () => await eraseKeys());
+      await nfcPerformAction(async () => await eraseKeys(setWorkStatusMessage));
       Alert.alert('Done, erased keys.');
     } catch (e) {
       if (e.message) {
@@ -142,58 +164,15 @@ const App: () => Node = () => {
       }
     }
 
+    setNfcResult(null);
     setIsWorking(false);
   }
 
   function copyPublicKeyToClipboard() {
-    Clipboard.setString(bytesToHex(nfcResult.publicKey));
-  }
-
-  function copySignatureToClipboard() {
-    let hexR = bytesToHex(nfcResult.signature.r).padStart(32, '0');
-    let hexS = bytesToHex(nfcResult.signature.s).padStart(32, '0');
-    Clipboard.setString(hexR + hexS);
-  }
-
-  function renderNfcResult() {
-    return (
-      <View>
-        {nfcResult.publicKey ? (
-          <View>
-            <TouchableOpacity onPress={() => copyPublicKeyToClipboard()}>
-              <Text style={{color: 'black'}}>
-                Received tag's public key: {bytesToHex(nfcResult.publicKey)}
-              </Text>
-            </TouchableOpacity>
-          </View>
-        ) : (
-          <View />
-        )}
-        {nfcResult.signature ? (
-          <View>
-            <View>
-              <TouchableOpacity onPress={() => copySignatureToClipboard()}>
-                <Text style={{color: 'black'}}>
-                  Received signature: ({bytesToHex(nfcResult.signature.r)},{' '}
-                  {bytesToHex(nfcResult.signature.s)})
-                </Text>
-              </TouchableOpacity>
-            </View>
-            <View>
-              <Text
-                style={{
-                  color: verifyResult ? 'green' : 'red',
-                  fontWeight: 'bold',
-                }}>
-                Verify result: {verifyResult ? 'Valid' : 'Invalid'}
-              </Text>
-            </View>
-          </View>
-        ) : (
-          <View />
-        )}
-      </View>
-    );
+    if (nfcResult && nfcResult.publicKey) {
+      Clipboard.setString(bytesToHex(nfcResult.publicKey));
+      Alert.alert('Public key was copied to the clipboard!');
+    }
   }
 
   if (!supported || !enabled) {
@@ -234,68 +213,172 @@ const App: () => Node = () => {
     );
   }
 
+  const dimensions = Dimensions.get('window');
+  const width = dimensions.width - 80;
+  const imageHeight = Math.round((width * 439) / 1401);
+  const imageWidth = width;
+  let verifyButtonStyle = 'normal';
+  let viewContent = <View />;
+  let tagsPublicKey =
+    nfcResult && nfcResult.publicKey ? bytesToHex(nfcResult.publicKey) : '';
+
+  if (isWorking) {
+    verifyButtonStyle = 'working';
+  } else if (nfcResult && nfcResult.signature) {
+    verifyButtonStyle = verifyResult ? 'success' : 'failure';
+  }
+
+  if (viewMode === 'main') {
+    viewContent = (
+      <View>
+        <View style={{paddingTop: 30, flexDirection: 'row'}}>
+          <TextInput
+            style={{
+              backgroundColor: 'white',
+              color: 'black',
+              borderRadius: 4,
+              elevation: 3,
+              borderColor: 'black',
+              fontSize: 16,
+              padding: 16,
+              width: dimensions.width - 60 - 80 - 10,
+              height: 80,
+            }}
+            multiline={true}
+            placeholder={'Paste public key or scan QR code...'}
+            placeholderTextColor={'#000000'}
+            onChangeText={setPublicKey}
+            value={publicKey}
+          />
+          <TouchableOpacity onPress={() => setViewMode('scan')}>
+            <Image
+              source={require('./assets/qr.png')}
+              style={{marginLeft: 10, width: 80, height: 80}}
+            />
+          </TouchableOpacity>
+        </View>
+        <View style={{paddingTop: 30}}>
+          <SButton
+            onPress={() => btnPerformSigning()}
+            title={!isWorking ? 'VERIFY TAG' : workStatusMessage}
+            disabled={isWorking}
+            btnStyle={verifyButtonStyle}
+          />
+        </View>
+      </View>
+    );
+  } else if (viewMode === 'create') {
+    viewContent = (
+      <View>
+        <View style={{paddingTop: 30}}>
+          <SButton
+            onPress={() => btnGenerateKeys()}
+            title={
+              isWorking && currentAction === 'generate'
+                ? workStatusMessage
+                : 'GENERATE KEYS ON TAG'
+            }
+            disabled={isWorking}
+            btnStyle={
+              isWorking && currentAction === 'generate' ? 'working' : 'normal'
+            }
+          />
+        </View>
+        <View style={{paddingTop: 30}}>
+          <SButton
+            onPress={() => btnEraseKeys()}
+            title={
+              isWorking && currentAction === 'erase'
+                ? workStatusMessage
+                : 'ERASE KEYS ON TAG'
+            }
+            disabled={isWorking}
+            btnStyle={
+              isWorking && currentAction === 'erase' ? 'working' : 'normal'
+            }
+          />
+        </View>
+        <TouchableOpacity onPress={() => copyPublicKeyToClipboard()}>
+          <View style={{backgroundColor: 'white', marginTop: 30, height: 120}}>
+            <Text style={{color: 'black', padding: 15}}>{tagsPublicKey}</Text>
+          </View>
+        </TouchableOpacity>
+      </View>
+    );
+  }
+
   return (
-    <SafeAreaView>
-      <StatusBar barStyle={'light-content'} />
-      <ScrollView contentInsetAdjustmentBehavior="automatic">
-        <View style={{backgroundColor: 'white', padding: 30}}>
+    <SafeAreaView style={{flex: 1}}>
+      <ScrollView
+        contentInsetAdjustmentBehavior="automatic"
+        style={{flex: 0.8, backgroundColor: '#1E1E1F'}}>
+        <View style={{backgroundColor: '#1E1E1F', padding: 40}}>
+          <Image
+            source={require('./assets/logo.png')}
+            style={{height: imageHeight, width: imageWidth}}
+          />
+        </View>
+
+        <View style={{padding: 30}}>
+          {viewContent}
+
           <View>
-            <Text style={{color: 'black', fontSize: 36}}>
-              ECDSA NFC Tag Prototype (build 2022-03-08 01:10)
-            </Text>
-          </View>
-          {(nfcResult && nfcResult.challenge) || challenge ? (
-            <View>
-              <Text style={{color: 'black'}}>
-                Challenge:{' '}
-                {nfcResult && nfcResult.challenge
-                  ? bytesToHex(nfcResult.challenge)
-                  : challenge
-                  ? bytesToHex(challenge)
-                  : '(null)'}
-              </Text>
-            </View>
-          ) : (
-            <View />
-          )}
-          {nfcResult ? renderNfcResult() : <View />}
-          <View style={{paddingTop: 30}}>
-            <Button onPress={() => btnScanQRCode()} title={'Scan QR code'} />
-            <Text style={{color: 'black'}}>Public key:</Text>
-            <TextInput
+            <Text
               style={{
-                backgroundColor: 'white',
-                color: 'black',
-                borderWidth: 1,
-                borderColor: 'black',
-              }}
-              onChangeText={setPublicKey}
-              value={publicKey}
-            />
-          </View>
-          <View style={{paddingTop: 30}}>
-            <Button
-              onPress={() => btnPerformSigning()}
-              title={!isWorking ? 'Authenticate tag' : 'Please tap the tag'}
-              disabled={isWorking}
-            />
-          </View>
-          <View style={{paddingTop: 30}}>
-            <Button
-              onPress={() => btnGenerateKeys()}
-              title={!isWorking ? 'Generate keys' : 'Please tap the tag'}
-              disabled={isWorking}
-            />
-          </View>
-          <View style={{paddingTop: 30}}>
-            <Button
-              onPress={() => btnEraseKeys()}
-              title={!isWorking ? 'Erase key' : 'Please tap the tag'}
-              disabled={isWorking}
-            />
+                color: 'white',
+                width: '100%',
+                textAlign: 'center',
+                marginTop: 30,
+                fontSize: 16,
+              }}>
+              Copyright © EncryptoArt Systems S.L.
+            </Text>
           </View>
         </View>
       </ScrollView>
+      <View style={{flex: 0.2, flexDirection: 'row'}}>
+        <TouchableOpacity
+          onPress={async () => {
+            await cancelNfcOperation();
+            setViewMode('main');
+          }}>
+          <View
+            style={{
+              borderWidth: 2,
+              borderStyle: 'solid',
+              borderColor: 'white',
+              width: dimensions.width * 0.5,
+              height: '100%',
+              justifyContent: 'center',
+              alignItems: 'center',
+            }}>
+            <Text style={{fontSize: 24, fontWeight: 'bold', color: 'white'}}>
+              VERIFY TAG
+            </Text>
+          </View>
+        </TouchableOpacity>
+        <TouchableOpacity
+          onPress={async () => {
+            await cancelNfcOperation();
+            setViewMode('create');
+          }}>
+          <View
+            style={{
+              borderWidth: 2,
+              borderStyle: 'solid',
+              borderLeftWidth: 0,
+              borderColor: 'white',
+              width: dimensions.width * 0.5,
+              height: '100%',
+              justifyContent: 'center',
+              alignItems: 'center',
+            }}>
+            <Text style={{fontSize: 24, fontWeight: 'bold', color: 'white'}}>
+              CREATE TAG
+            </Text>
+          </View>
+        </TouchableOpacity>
+      </View>
     </SafeAreaView>
   );
 };

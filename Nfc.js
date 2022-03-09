@@ -191,9 +191,11 @@ async function checkConfig() {
   }
 }
 
-async function signChallenge(challenge) {
+async function signChallenge(challenge, setWorkStatusMessage) {
   await checkConfig();
   await waitUnlockNFC();
+
+  setWorkStatusMessage('DETECTED TAG, PLEASE HOLD IT');
 
   // sign digest
   let res = await doHLCommand([0xb1].concat(Array.from(challenge)));
@@ -205,20 +207,24 @@ async function signChallenge(challenge) {
   };
 }
 
-async function generateKeys() {
+async function generateKeys(setWorkStatusMessage) {
   await checkConfig();
   await waitUnlockNFC();
+
+  setWorkStatusMessage('DETECTED TAG, PLEASE HOLD IT');
 
   // request key generation
   let res = await doHLCommand([0xe5]);
   return {
-    publicKey: res,
+    publicKey: [0x04, ...res],
   };
 }
 
-async function eraseKeys() {
+async function eraseKeys(setWorkStatusMessage) {
   await checkConfig();
   await waitUnlockNFC();
+
+  setWorkStatusMessage('DETECTED TAG, PLEASE HOLD IT');
 
   let res = await doHLCommand([0xe7]);
   console.log(res);
