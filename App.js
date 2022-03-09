@@ -106,6 +106,7 @@ const App: () => Node = () => {
     setCurrentAction('sign');
     setWorkStatusMessage('PLEASE TAP TAG');
     setIsWorking(true);
+    setVerifyResult(false);
     setNfcResult(null);
 
     try {
@@ -340,6 +341,8 @@ const App: () => Node = () => {
         <TouchableOpacity
           onPress={async () => {
             await cancelNfcOperation();
+            setVerifyResult(false);
+            setNfcResult(null);
             setViewMode('main');
           }}>
           <View
@@ -360,6 +363,8 @@ const App: () => Node = () => {
         <TouchableOpacity
           onPress={async () => {
             await cancelNfcOperation();
+            setVerifyResult(false);
+            setNfcResult(null);
             setViewMode('create');
           }}>
           <View
