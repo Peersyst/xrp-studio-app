@@ -222,11 +222,13 @@ const App: () => Node = () => {
   let viewContent = <View />;
   let tagsPublicKey =
     nfcResult && nfcResult.publicKey ? bytesToHex(nfcResult.publicKey) : '';
+  let verifyTagLabel = 'VERIFY TAG';
 
   if (isWorking) {
     verifyButtonStyle = 'working';
   } else if (nfcResult && nfcResult.signature) {
     verifyButtonStyle = verifyResult ? 'success' : 'failure';
+    verifyTagLabel = verifyResult ? 'TAG VERIFIED' : 'TAG NOT VERIFIED';
   }
 
   if (viewMode === 'main') {
@@ -261,7 +263,7 @@ const App: () => Node = () => {
         <View style={{paddingTop: 30}}>
           <SButton
             onPress={() => btnPerformSigning()}
-            title={!isWorking ? 'VERIFY TAG' : workStatusMessage}
+            title={!isWorking ? verifyTagLabel : workStatusMessage}
             disabled={isWorking}
             btnStyle={verifyButtonStyle}
           />
