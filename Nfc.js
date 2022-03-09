@@ -195,17 +195,12 @@ async function signChallenge(challenge) {
   await checkConfig();
   await waitUnlockNFC();
 
-  // get public key
-  let pkey = await doHLCommand([0xb0]);
-  console.log('pkey', bytesToHex(pkey));
-
   // sign digest
   let res = await doHLCommand([0xb1].concat(Array.from(challenge)));
   console.log('signature', bytesToHex(res));
 
   return {
     challenge: challenge,
-    publicKey: pkey,
     signature: {r: res.slice(0, 32), s: res.slice(32, 64)},
   };
 }
@@ -214,8 +209,11 @@ async function generateKeys() {
   await checkConfig();
   await waitUnlockNFC();
 
+  // request key generation
   let res = await doHLCommand([0xe5]);
-  console.log(res);
+  return {
+    publicKey: res,
+  };
 }
 
 async function eraseKeys() {
