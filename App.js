@@ -322,7 +322,7 @@ const App: () => Node = () => {
           />
         </View>
 
-        <View style={{padding: 30}}>
+        <View style={{padding: 30, paddingTop: 0}}>
           {viewContent}
 
           <View>
@@ -356,6 +356,7 @@ const App: () => Node = () => {
               height: '100%',
               justifyContent: 'center',
               alignItems: 'center',
+              backgroundColor: '#1E1E1F',
             }}>
             <Text style={{fontSize: 24, fontWeight: 'bold', color: 'white'}}>
               VERIFY TAG
@@ -379,6 +380,7 @@ const App: () => Node = () => {
               height: '100%',
               justifyContent: 'center',
               alignItems: 'center',
+              backgroundColor: '#1E1E1F',
             }}>
             <Text style={{fontSize: 24, fontWeight: 'bold', color: 'white'}}>
               CREATE TAG
