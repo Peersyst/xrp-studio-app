@@ -17,6 +17,7 @@ import {
 import Clipboard from '@react-native-clipboard/clipboard';
 import QRCodeScanner from 'react-native-qrcode-scanner';
 import {RNCamera} from 'react-native-camera';
+import DilithiumModule from './dilithium.js';
 
 import {eraseKeys, generateKeys, nfcPerformAction, signChallenge} from './Nfc';
 import {bytesToHex} from './Util';
@@ -63,16 +64,26 @@ const App: () => Node = () => {
 
   React.useEffect(() => {
     async function verifySignature() {
-      if (nfcResult) {
-        let ec = new EC('secp256k1');
+      if (nfcResult && nfcResult.signature) {
+        let mod = await DilithiumModule();
 
-        try {
-          let key = ec.keyFromPublic(publicKey, 'hex');
-          let res = key.verify(nfcResult.challenge, nfcResult.signature);
-          setVerifyResult(res);
-        } catch (e) {
-          setVerifyResult(false);
-        }
+        let m_ptr = mod._get_m_buffer();
+        let m_len = mod._get_m_length();
+        const m = new Uint8Array(mod.HEAP8.buffer, m_ptr, m_len);
+
+        let sig_ptr = mod._get_sig_buffer();
+        let sig_len = mod._get_sig_length();
+        const sig = new Uint8Array(mod.HEAP8.buffer, sig_ptr, sig_len);
+
+        let pk_ptr = mod._get_pk_buffer();
+        let pk_len = mod._get_pk_length();
+        const pk = new Uint8Array(mod.HEAP8.buffer, pk_ptr, pk_len);
+
+        pk.set(Buffer.from(publicKey, 'hex'), 0);
+        sig.set(nfcResult.signature, 0);
+        m.set(nfcResult.challenge, 0);
+
+        setVerifyResult(mod._dilithium_verify_signature() === 0);
       }
     }
 

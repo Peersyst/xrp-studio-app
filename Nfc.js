@@ -46,7 +46,7 @@ async function waitUnlockNFC() {
   let success = false;
   let startTime = timeMs();
 
-  while (timeMs() - startTime < 8000) {
+  while (timeMs() - startTime < 12000) {
     try {
       let res = await iso15693Cmd(0xc0, hexToBytes('A000'));
       console.log('Config reg. A0 = ', bytesToHex(res));
@@ -198,12 +198,20 @@ async function signChallenge(challenge, setWorkStatusMessage) {
   setWorkStatusMessage('DETECTED TAG, PLEASE HOLD IT');
 
   // sign digest
+  let out = Buffer.alloc(0);
   let res = await doHLCommand([0xb1].concat(Array.from(challenge)));
-  console.log('signature', bytesToHex(res));
+  out = Buffer.concat([out, Buffer.from(res)]);
+
+  while (res.length > 0) {
+    res = await doHLCommand([]);
+    out = Buffer.concat([out, Buffer.from(res)]);
+  }
+
+  console.log('signature', bytesToHex(out));
 
   return {
     challenge: challenge,
-    signature: {r: res.slice(0, 32), s: res.slice(32, 64)},
+    signature: [...out],
   };
 }
 
@@ -214,9 +222,17 @@ async function generateKeys(setWorkStatusMessage) {
   setWorkStatusMessage('DETECTED TAG, PLEASE HOLD IT');
 
   // request key generation
+  let out = Buffer.alloc(0);
   let res = await doHLCommand([0xe5]);
+  out = Buffer.concat([out, Buffer.from(res)]);
+
+  while (res.length > 0) {
+    res = await doHLCommand([]);
+    out = Buffer.concat([out, Buffer.from(res)]);
+  }
+
   return {
-    publicKey: [0x04, ...res],
+    publicKey: [...out],
   };
 }
 
