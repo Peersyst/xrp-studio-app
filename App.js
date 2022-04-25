@@ -21,7 +21,6 @@ import DilithiumModule from './dilithium.js';
 
 import {eraseKeys, generateKeys, nfcPerformAction, signChallenge} from './Nfc';
 import {bytesToHex} from './Util';
-import {ec as EC} from 'elliptic';
 import SButton from './SButton';
 
 const App: () => Node = () => {

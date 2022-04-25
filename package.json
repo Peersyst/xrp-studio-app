@@ -15,7 +15,6 @@
     "assert": "^1.1.1",
     "buffer": "^6.0.3",
     "crc-32": "^1.2.1",
-    "elliptic": "^6.5.4",
     "events": "^1.0.0",
     "react": "17.0.2",
     "react-native": "0.66.3",
