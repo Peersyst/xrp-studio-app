@@ -5,6 +5,20 @@ import NfcManager, {
 } from 'react-native-nfc-manager';
 import {bytesToHex, hexToBytes} from './Util';
 import CRC32 from 'crc-32';
+import crypto from "crypto";
+
+
+let errorTable = {
+  'ec': 'No key data was found. Please generate the tag\'s key first.',
+  '7e': 'Wrong command length.',
+  '55': 'Failed to perform signing.',
+  '11': 'Failed to read command.',
+  '13': 'Failed to read command (continuation).',
+  '5c': 'Unknown command.',
+  'e1': 'Internal error.',
+  'e5': 'Key already exists. You must erase it before generating a new one.',
+  'aa': 'Authentication failed. Incorrect erase password was provided.',
+};
 
 function sleep(ms) {
   return new Promise(resolve => {
@@ -150,7 +164,13 @@ async function doHLCommand(data) {
   }
 
   if (!isSuccess) {
-    throw Error('Device returned error: ' + bytesToHex(out));
+    let errCode = bytesToHex(out);
+
+    if (errorTable.hasOwnProperty(errCode)) {
+      throw Error('Device returned error: ' + errorTable[errCode]);
+    } else {
+      throw Error('Device returned unknown error code: ' + errCode);
+    }
   }
 
   return out;
@@ -215,15 +235,16 @@ async function signChallenge(challenge, setWorkStatusMessage) {
   };
 }
 
-async function generateKeys(setWorkStatusMessage) {
+async function generateKeys(setWorkStatusMessage, erasePassword) {
   await checkConfig();
   await waitUnlockNFC();
 
   setWorkStatusMessage('DETECTED TAG, PLEASE HOLD IT');
+  let key = crypto.createHash('sha256').update(erasePassword).digest();
 
   // request key generation
   let out = Buffer.alloc(0);
-  let res = await doHLCommand([0xe5]);
+  let res = await doHLCommand([0xe5].concat([...key]));
   out = Buffer.concat([out, Buffer.from(res)]);
 
   while (res.length > 0) {
@@ -236,13 +257,28 @@ async function generateKeys(setWorkStatusMessage) {
   };
 }
 
-async function eraseKeys(setWorkStatusMessage) {
+async function eraseKeys(setWorkStatusMessage, erasePassword) {
   await checkConfig();
   await waitUnlockNFC();
 
   setWorkStatusMessage('DETECTED TAG, PLEASE HOLD IT');
 
   let res = await doHLCommand([0xe7]);
+
+  let key = crypto.createHash('sha256').update(erasePassword).digest();
+  let challenge = res.slice(12);
+  let iv = Array(4).fill(0x00).concat(res.slice(0, 12));
+
+  console.log('key', Buffer.from(key).toString('hex'));
+  console.log('iv', Buffer.from(iv).toString('hex'));
+  console.log('challenge', Buffer.from(challenge).toString('hex'));
+
+  let c = crypto.createCipheriv('aes-256-ctr', key, iv);
+  let response = c.update(challenge);
+
+  console.log('response', response.toString('hex'));
+
+  res = await doHLCommand([0xe7].concat([...response]));
   console.log(res);
 }
 

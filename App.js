@@ -18,6 +18,7 @@ import Clipboard from '@react-native-clipboard/clipboard';
 import QRCodeScanner from 'react-native-qrcode-scanner';
 import {RNCamera} from 'react-native-camera';
 import DilithiumModule from './dilithium.js';
+import crypto from 'crypto';
 
 import {eraseKeys, generateKeys, nfcPerformAction, signChallenge} from './Nfc';
 import {bytesToHex} from './Util';
@@ -32,6 +33,7 @@ const App: () => Node = () => {
   const [nfcResult, setNfcResult] = React.useState(null);
   const [viewMode, setViewMode] = React.useState('main');
   const [publicKey, setPublicKey] = React.useState('');
+  const [erasePassword, setErasePassword] = React.useState('');
 
   const [challenge, setChallenge] = React.useState(null);
   const [verifyResult, setVerifyResult] = React.useState(null);
@@ -52,8 +54,7 @@ const App: () => Node = () => {
   }, []);
 
   async function generateChallenge() {
-    let tmp = new Uint8Array(32);
-    crypto.getRandomValues(tmp);
+    let tmp = crypto.randomBytes(32);
     setChallenge(tmp);
   }
 
@@ -126,7 +127,7 @@ const App: () => Node = () => {
       setNfcResult(result);
     } catch (e) {
       if (e.message) {
-        Alert.alert(e.message);
+        Alert.alert('Error!', e.message);
       } else {
         Alert.alert('Communication error!');
       }
@@ -137,46 +138,71 @@ const App: () => Node = () => {
   }
 
   async function btnGenerateKeys() {
-    let result = null;
     setCurrentAction('generate');
-    setWorkStatusMessage('PLEASE TAP TAG');
-    setIsWorking(true);
-
-    try {
-      result = await nfcPerformAction(
-        async () => await generateKeys(setWorkStatusMessage),
-      );
-      setNfcResult(result);
-      Alert.alert('Done, generated a new key.');
-    } catch (e) {
-      if (e.message) {
-        Alert.alert(e.message);
-      } else {
-        Alert.alert('Communication error!');
-      }
-    }
-
-    setIsWorking(false);
+    setViewMode('password');
   }
 
   async function btnEraseKeys() {
     setCurrentAction('erase');
-    setWorkStatusMessage('PLEASE TAP TAG');
-    setIsWorking(true);
+    setViewMode('password');
+  }
 
-    try {
-      await nfcPerformAction(async () => await eraseKeys(setWorkStatusMessage));
-      Alert.alert('Done, erased keys.');
-    } catch (e) {
-      if (e.message) {
-        Alert.alert(e.message);
-      } else {
-        Alert.alert('Communication error!');
-      }
+  async function btnCancelPassword() {
+    await cancelNfcOperation();
+    setVerifyResult(false);
+    setNfcResult(null);
+    setViewMode('create');
+  }
+
+  async function btnProceedAction() {
+    if (erasePassword.length < 3) {
+      Alert.alert('Erase password must have at least 3 characters!');
+      return;
     }
 
-    setNfcResult(null);
-    setIsWorking(false);
+    if (currentAction === 'generate') {
+      let result = null;
+      setCurrentAction('generate');
+      setWorkStatusMessage('PLEASE TAP TAG');
+      setIsWorking(true);
+
+      try {
+        result = await nfcPerformAction(
+          async () => await generateKeys(setWorkStatusMessage, erasePassword),
+        );
+        setNfcResult(result);
+        Alert.alert('Done, generated a new key.');
+      } catch (e) {
+        if (e.message) {
+          Alert.alert('Error!', e.message);
+        } else {
+          Alert.alert('Communication error!');
+        }
+      }
+
+      setErasePassword('');
+      setIsWorking(false);
+      setViewMode('create');
+    } else if (currentAction === 'erase') {
+      setWorkStatusMessage('PLEASE TAP TAG');
+      setIsWorking(true);
+
+      try {
+        await nfcPerformAction(async () => await eraseKeys(setWorkStatusMessage, erasePassword));
+        Alert.alert('Done, erased keys.');
+      } catch (e) {
+        if (e.message) {
+          Alert.alert('Error!', e.message);
+        } else {
+          Alert.alert('Communication error!');
+        }
+      }
+
+      setErasePassword('');
+      setNfcResult(null);
+      setIsWorking(false);
+      setViewMode('create');
+    }
   }
 
   function copyPublicKeyToClipboard() {
@@ -244,7 +270,7 @@ const App: () => Node = () => {
   if (viewMode === 'main') {
     viewContent = (
       <View>
-        <View style={{paddingTop: 30, flexDirection: 'row'}}>
+        <View style={{ paddingTop: 30, flexDirection: 'row' }}>
           <TextInput
             style={{
               backgroundColor: 'white',
@@ -266,17 +292,67 @@ const App: () => Node = () => {
           <TouchableOpacity onPress={() => setViewMode('scan')}>
             <Image
               source={require('./assets/qr.png')}
-              style={{marginLeft: 10, width: 80, height: 80}}
+              style={{ marginLeft: 10, width: 80, height: 80 }}
             />
           </TouchableOpacity>
         </View>
-        <View style={{paddingTop: 30}}>
+        <View style={{ paddingTop: 30 }}>
           <SButton
             onPress={() => btnPerformSigning()}
             title={!isWorking ? verifyTagLabel : workStatusMessage}
             disabled={isWorking}
             btnStyle={verifyButtonStyle}
           />
+        </View>
+      </View>
+    );
+  } else if (viewMode === 'password') {
+    let actionText = '';
+    let proceedText = '';
+
+    if (currentAction === 'generate') {
+      actionText = 'Please enter password to protect the tag. You will not be able to erase the key without knowing the password.';
+      proceedText = 'GENERATE KEYS';
+    } else if (currentAction === 'erase') {
+      actionText = 'Please enter erase password. This is the password that you have created upon key generation.';
+      proceedText = 'ERASE KEYS';
+    }
+
+    viewContent = (
+      <View>
+        <View style={{paddingTop: 30}}>
+          <Text>{actionText}</Text>
+          <Text style={{paddingTop: 15, paddingBottom: 15}}>Password:</Text>
+          <TextInput secureTextEntry={true} onChangeText={setErasePassword} value={erasePassword} style={{
+            backgroundColor: 'white',
+            color: 'black',
+            borderRadius: 4,
+            elevation: 3,
+            borderColor: 'black',
+            fontSize: 16,
+            paddingHorizontal: 10,
+          }} editable={!isWorking} />
+          <View style={{paddingTop: 15}}>
+            <SButton
+              onPress={() => btnProceedAction()}
+              title={
+                isWorking
+                  ? workStatusMessage
+                  : proceedText
+              }
+              disabled={isWorking}
+              btnStyle={
+                isWorking ? 'working' : 'normal'
+              }
+            />
+          </View>
+          <View style={{paddingTop: 15}}>
+            <SButton
+              onPress={() => btnCancelPassword()}
+              title={'CANCEL'}
+              btnStyle={'normal'}
+            />
+          </View>
         </View>
       </View>
     );
@@ -349,7 +425,7 @@ const App: () => Node = () => {
           </View>
         </View>
       </ScrollView>
-      <View style={{flex: 0.2, flexDirection: 'row'}}>
+      {viewMode !== 'password' ? <View style={{flex: 0.2, flexDirection: 'row'}}>
         <TouchableOpacity
           onPress={async () => {
             await cancelNfcOperation();
@@ -397,7 +473,7 @@ const App: () => Node = () => {
             </Text>
           </View>
         </TouchableOpacity>
-      </View>
+      </View> : <View />}
     </SafeAreaView>
   );
 };
