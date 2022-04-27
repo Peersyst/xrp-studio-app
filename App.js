@@ -321,8 +321,8 @@ const App: () => Node = () => {
     viewContent = (
       <View>
         <View style={{paddingTop: 30}}>
-          <Text>{actionText}</Text>
-          <Text style={{paddingTop: 15, paddingBottom: 15}}>Password:</Text>
+          <Text style={{color: 'white'}}>{actionText}</Text>
+          <Text style={{paddingTop: 15, paddingBottom: 15, color: 'white'}}>Password:</Text>
           <TextInput secureTextEntry={true} onChangeText={setErasePassword} value={erasePassword} style={{
             backgroundColor: 'white',
             color: 'black',
