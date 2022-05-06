@@ -384,8 +384,8 @@ const App: () => Node = () => {
     viewContent = (
       <View>
         <View style={{paddingTop: 30}}>
-          <Text>{actionText}</Text>
-          <Text style={{paddingTop: 15, paddingBottom: 15}}>
+          <Text style={{color: 'white'}}>{actionText}</Text>
+          <Text style={{paddingTop: 15, paddingBottom: 15, color: 'white'}}>
             {passwordText}
           </Text>
           <TextInput
