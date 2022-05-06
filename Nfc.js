@@ -5,19 +5,18 @@ import NfcManager, {
 } from 'react-native-nfc-manager';
 import {bytesToHex, hexToBytes} from './Util';
 import CRC32 from 'crc-32';
-import crypto from "crypto";
-
+import crypto from 'crypto';
 
 let errorTable = {
-  'ec': 'No key data was found. Please generate the tag\'s key first.',
+  ec: "No key data was found. Please generate the tag's key first.",
   '7e': 'Wrong command length.',
-  '55': 'Failed to perform signing.',
-  '11': 'Failed to read command.',
-  '13': 'Failed to read command (continuation).',
+  55: 'Failed to perform signing.',
+  11: 'Failed to read command.',
+  13: 'Failed to read command (continuation).',
   '5c': 'Unknown command.',
-  'e1': 'Internal error.',
-  'e5': 'Key already exists. You must erase it before generating a new one.',
-  'aa': 'Authentication failed. Incorrect erase password was provided.',
+  e1: 'Internal error.',
+  e5: 'Key already exists. You must erase it before generating a new one.',
+  aa: 'Authentication failed. Incorrect erase password was provided.',
 };
 
 function sleep(ms) {
@@ -282,6 +281,62 @@ async function eraseKeys(setWorkStatusMessage, erasePassword) {
   console.log(res);
 }
 
+function aesCtrEncrypt(nonce, key, data) {
+  console.log('input data', data.toString('hex'));
+
+  let response = Buffer.from([]);
+  let iv = Buffer.concat([Buffer.alloc(4), nonce]);
+  let ctr = 0;
+
+  while (data.length > 0) {
+    iv.writeUint32LE(ctr, 0);
+    let c = crypto.createCipheriv('aes-256-ctr', key, iv);
+    response = Buffer.concat([response, c.update(data.slice(0, 16))]);
+    data = data.slice(16);
+    ctr++;
+  }
+
+  console.log('encrypted data', response.toString('hex'));
+  return response;
+}
+
+async function changePassword(
+  setWorkStatusMessage,
+  oldPassword,
+  erasePassword,
+) {
+  await checkConfig();
+  await waitUnlockNFC();
+
+  setWorkStatusMessage('DETECTED TAG, PLEASE HOLD IT');
+
+  let res = await doHLCommand([0xe9]);
+
+  let key = crypto.createHash('sha256').update(oldPassword).digest();
+  let newKey = crypto.createHash('sha256').update(erasePassword).digest();
+  let challenge = res.slice(12);
+  let nonce = Buffer.from(res.slice(0, 12));
+
+  console.log('change pass');
+  console.log('key', Buffer.from(key).toString('hex'));
+  console.log('challenge', Buffer.from(challenge).toString('hex'));
+  console.log('newKey', newKey.toString('hex'));
+
+  let crcBuf = Buffer.alloc(16);
+  crcBuf.writeInt32LE(CRC32.buf(newKey), 0);
+
+  console.log('a1', [Buffer.from(challenge), newKey, crcBuf]);
+  let response = aesCtrEncrypt(
+    nonce,
+    key,
+    Buffer.concat([Buffer.from(challenge), newKey, crcBuf]),
+  );
+
+  console.log('response', response.toString('hex'));
+  res = await doHLCommand([0xe9].concat([...response]));
+  console.log(res);
+}
+
 async function nfcPerformAction(actionCb) {
   let result = null;
 
@@ -329,4 +384,10 @@ async function nfcPerformAction(actionCb) {
   return result;
 }
 
-export {nfcPerformAction, signChallenge, generateKeys, eraseKeys};
+export {
+  nfcPerformAction,
+  signChallenge,
+  generateKeys,
+  eraseKeys,
+  changePassword,
+};

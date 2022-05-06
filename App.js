@@ -20,7 +20,13 @@ import {RNCamera} from 'react-native-camera';
 import DilithiumModule from './dilithium.js';
 import crypto from 'crypto';
 
-import {eraseKeys, generateKeys, nfcPerformAction, signChallenge} from './Nfc';
+import {
+  changePassword,
+  eraseKeys,
+  generateKeys,
+  nfcPerformAction,
+  signChallenge,
+} from './Nfc';
 import {bytesToHex} from './Util';
 import SButton from './SButton';
 
@@ -34,6 +40,7 @@ const App: () => Node = () => {
   const [viewMode, setViewMode] = React.useState('main');
   const [publicKey, setPublicKey] = React.useState('');
   const [erasePassword, setErasePassword] = React.useState('');
+  const [oldPassword, setOldPassword] = React.useState('');
 
   const [challenge, setChallenge] = React.useState(null);
   const [verifyResult, setVerifyResult] = React.useState(null);
@@ -147,6 +154,11 @@ const App: () => Node = () => {
     setViewMode('password');
   }
 
+  async function btnChangePassword() {
+    setCurrentAction('change_prev');
+    setViewMode('password');
+  }
+
   async function btnCancelPassword() {
     await cancelNfcOperation();
     setVerifyResult(false);
@@ -160,7 +172,38 @@ const App: () => Node = () => {
       return;
     }
 
-    if (currentAction === 'generate') {
+    if (currentAction === 'change_prev') {
+      setOldPassword(erasePassword);
+      setErasePassword('');
+      setCurrentAction('change_new');
+    } else if (currentAction === 'change_new') {
+      setWorkStatusMessage('PLEASE TAP TAG');
+      setIsWorking(true);
+
+      try {
+        await nfcPerformAction(
+          async () =>
+            await changePassword(
+              setWorkStatusMessage,
+              oldPassword,
+              erasePassword,
+            ),
+        );
+        Alert.alert('Done, changed password.');
+      } catch (e) {
+        if (e.message) {
+          Alert.alert('Error!', e.message);
+        } else {
+          Alert.alert('Communication error!');
+        }
+      }
+
+      setOldPassword('');
+      setErasePassword('');
+      setNfcResult(null);
+      setIsWorking(false);
+      setViewMode('create');
+    } else if (currentAction === 'generate') {
       let result = null;
       setCurrentAction('generate');
       setWorkStatusMessage('PLEASE TAP TAG');
@@ -188,7 +231,9 @@ const App: () => Node = () => {
       setIsWorking(true);
 
       try {
-        await nfcPerformAction(async () => await eraseKeys(setWorkStatusMessage, erasePassword));
+        await nfcPerformAction(
+          async () => await eraseKeys(setWorkStatusMessage, erasePassword),
+        );
         Alert.alert('Done, erased keys.');
       } catch (e) {
         if (e.message) {
@@ -270,7 +315,7 @@ const App: () => Node = () => {
   if (viewMode === 'main') {
     viewContent = (
       <View>
-        <View style={{ paddingTop: 30, flexDirection: 'row' }}>
+        <View style={{paddingTop: 30, flexDirection: 'row'}}>
           <TextInput
             style={{
               backgroundColor: 'white',
@@ -292,11 +337,11 @@ const App: () => Node = () => {
           <TouchableOpacity onPress={() => setViewMode('scan')}>
             <Image
               source={require('./assets/qr.png')}
-              style={{ marginLeft: 10, width: 80, height: 80 }}
+              style={{marginLeft: 10, width: 80, height: 80}}
             />
           </TouchableOpacity>
         </View>
-        <View style={{ paddingTop: 30 }}>
+        <View style={{paddingTop: 30}}>
           <SButton
             onPress={() => btnPerformSigning()}
             title={!isWorking ? verifyTagLabel : workStatusMessage}
@@ -311,39 +356,59 @@ const App: () => Node = () => {
     let proceedText = '';
 
     if (currentAction === 'generate') {
-      actionText = 'Please enter password to protect the tag. You will not be able to erase the key without knowing the password.';
+      actionText =
+        'Please enter password to protect the tag. You will not be able to erase the key without knowing the password.';
       proceedText = 'GENERATE KEYS';
     } else if (currentAction === 'erase') {
-      actionText = 'Please enter erase password. This is the password that you have created upon key generation.';
+      actionText =
+        'Please enter erase password. This is the password that you have created upon key generation.';
       proceedText = 'ERASE KEYS';
+    } else if (currentAction === 'change_prev') {
+      actionText =
+        'Please enter the current password. This is the password that you have created upon key generation.';
+      proceedText = 'NEXT';
+    } else if (currentAction === 'change_new') {
+      actionText =
+        'Please enter the new password. You will not be able to erase the key without knowing the password.';
+      proceedText = 'CHANGE PASSWORD';
+    }
+
+    let passwordText = 'Current password:';
+
+    if (currentAction === 'change_prev') {
+      passwordText = 'Old password:';
+    } else if (currentAction === 'change_new' || currentAction === 'generate') {
+      passwordText = 'New password:';
     }
 
     viewContent = (
       <View>
         <View style={{paddingTop: 30}}>
           <Text>{actionText}</Text>
-          <Text style={{paddingTop: 15, paddingBottom: 15}}>Password:</Text>
-          <TextInput secureTextEntry={true} onChangeText={setErasePassword} value={erasePassword} style={{
-            backgroundColor: 'white',
-            color: 'black',
-            borderRadius: 4,
-            elevation: 3,
-            borderColor: 'black',
-            fontSize: 16,
-            paddingHorizontal: 10,
-          }} editable={!isWorking} />
+          <Text style={{paddingTop: 15, paddingBottom: 15}}>
+            {passwordText}
+          </Text>
+          <TextInput
+            secureTextEntry={true}
+            onChangeText={setErasePassword}
+            value={erasePassword}
+            style={{
+              backgroundColor: 'white',
+              color: 'black',
+              borderRadius: 4,
+              elevation: 3,
+              borderColor: 'black',
+              fontSize: 16,
+              paddingHorizontal: 10,
+            }}
+            editable={!isWorking}
+          />
           <View style={{paddingTop: 15}}>
             <SButton
               onPress={() => btnProceedAction()}
-              title={
-                isWorking
-                  ? workStatusMessage
-                  : proceedText
-              }
+              title={isWorking ? workStatusMessage : proceedText}
               disabled={isWorking}
-              btnStyle={
-                isWorking ? 'working' : 'normal'
-              }
+              btnStyle={isWorking ? 'working' : 'normal'}
             />
           </View>
           <View style={{paddingTop: 15}}>
@@ -387,6 +452,13 @@ const App: () => Node = () => {
             }
           />
         </View>
+        <View style={{paddingTop: 30}}>
+          <SButton
+            onPress={() => btnChangePassword()}
+            title={'CHANGE PASSWORD'}
+            btnStyle={'normal'}
+          />
+        </View>
         <TouchableOpacity onPress={() => copyPublicKeyToClipboard()}>
           <View style={{backgroundColor: 'white', marginTop: 30, height: 120}}>
             <Text style={{color: 'black', padding: 15}}>{tagsPublicKey}</Text>
@@ -425,55 +497,59 @@ const App: () => Node = () => {
           </View>
         </View>
       </ScrollView>
-      {viewMode !== 'password' ? <View style={{flex: 0.2, flexDirection: 'row'}}>
-        <TouchableOpacity
-          onPress={async () => {
-            await cancelNfcOperation();
-            setVerifyResult(false);
-            setNfcResult(null);
-            setViewMode('main');
-          }}>
-          <View
-            style={{
-              borderWidth: 2,
-              borderStyle: 'solid',
-              borderColor: 'white',
-              width: dimensions.width * 0.5,
-              height: '100%',
-              justifyContent: 'center',
-              alignItems: 'center',
-              backgroundColor: '#1E1E1F',
+      {viewMode !== 'password' ? (
+        <View style={{flex: 0.2, flexDirection: 'row'}}>
+          <TouchableOpacity
+            onPress={async () => {
+              await cancelNfcOperation();
+              setVerifyResult(false);
+              setNfcResult(null);
+              setViewMode('main');
             }}>
-            <Text style={{fontSize: 24, fontWeight: 'bold', color: 'white'}}>
-              VERIFY TAG
-            </Text>
-          </View>
-        </TouchableOpacity>
-        <TouchableOpacity
-          onPress={async () => {
-            await cancelNfcOperation();
-            setVerifyResult(false);
-            setNfcResult(null);
-            setViewMode('create');
-          }}>
-          <View
-            style={{
-              borderWidth: 2,
-              borderStyle: 'solid',
-              borderLeftWidth: 0,
-              borderColor: 'white',
-              width: dimensions.width * 0.5,
-              height: '100%',
-              justifyContent: 'center',
-              alignItems: 'center',
-              backgroundColor: '#1E1E1F',
+            <View
+              style={{
+                borderWidth: 2,
+                borderStyle: 'solid',
+                borderColor: 'white',
+                width: dimensions.width * 0.5,
+                height: '100%',
+                justifyContent: 'center',
+                alignItems: 'center',
+                backgroundColor: '#1E1E1F',
+              }}>
+              <Text style={{fontSize: 24, fontWeight: 'bold', color: 'white'}}>
+                VERIFY TAG
+              </Text>
+            </View>
+          </TouchableOpacity>
+          <TouchableOpacity
+            onPress={async () => {
+              await cancelNfcOperation();
+              setVerifyResult(false);
+              setNfcResult(null);
+              setViewMode('create');
             }}>
-            <Text style={{fontSize: 24, fontWeight: 'bold', color: 'white'}}>
-              CREATE TAG
-            </Text>
-          </View>
-        </TouchableOpacity>
-      </View> : <View />}
+            <View
+              style={{
+                borderWidth: 2,
+                borderStyle: 'solid',
+                borderLeftWidth: 0,
+                borderColor: 'white',
+                width: dimensions.width * 0.5,
+                height: '100%',
+                justifyContent: 'center',
+                alignItems: 'center',
+                backgroundColor: '#1E1E1F',
+              }}>
+              <Text style={{fontSize: 24, fontWeight: 'bold', color: 'white'}}>
+                CREATE TAG
+              </Text>
+            </View>
+          </TouchableOpacity>
+        </View>
+      ) : (
+        <View />
+      )}
     </SafeAreaView>
   );
 };
