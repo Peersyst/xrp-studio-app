@@ -1,4 +1,4 @@
-package com.ntag5client;
+package art.encrypto.client;
 
 import com.facebook.react.ReactActivity;
 
@@ -10,6 +10,6 @@ public class MainActivity extends ReactActivity {
    */
   @Override
   protected String getMainComponentName() {
-    return "NTAG5Client";
+    return "Encrypto Art";
   }
 }
