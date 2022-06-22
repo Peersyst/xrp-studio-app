@@ -25,6 +25,7 @@
     "react-native-qrcode-scanner": "^1.5.5",
     "react-native-randombytes": "^3.6.1",
     "readable-stream": "^1.0.33",
+    "rn-nodeify": "^10.3.0",
     "stream-browserify": "^1.0.0"
   },
   "devDependencies": {
