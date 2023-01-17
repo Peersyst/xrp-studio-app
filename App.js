@@ -472,8 +472,8 @@ const App: () => Node = () => {
     <SafeAreaView style={{flex: 1}}>
       <ScrollView
         contentInsetAdjustmentBehavior="automatic"
-        style={{flex: 0.8, backgroundColor: '#1E1E1F'}}>
-        <View style={{backgroundColor: '#1E1E1F', padding: 40}}>
+        style={{flex: 0.8, backgroundColor: '#141A1F'}}>
+        <View style={{backgroundColor: '#141A1F', padding: 40}}>
           <Image
             source={require('./assets/logo.png')}
             style={{height: imageHeight, width: imageWidth}}
@@ -515,7 +515,7 @@ const App: () => Node = () => {
                 height: '100%',
                 justifyContent: 'center',
                 alignItems: 'center',
-                backgroundColor: '#1E1E1F',
+                backgroundColor: '#141A1F',
               }}>
               <Text style={{fontSize: 24, fontWeight: 'bold', color: 'white'}}>
                 VERIFY TAG
@@ -539,7 +539,7 @@ const App: () => Node = () => {
                 height: '100%',
                 justifyContent: 'center',
                 alignItems: 'center',
-                backgroundColor: '#1E1E1F',
+                backgroundColor: '#141A1F',
               }}>
               <Text style={{fontSize: 24, fontWeight: 'bold', color: 'white'}}>
                 CREATE TAG
