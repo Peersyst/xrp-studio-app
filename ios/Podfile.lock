@@ -282,10 +282,10 @@ PODS:
     - React-Core
   - react-native-camera/RN (4.2.1):
     - React-Core
-  - react-native-get-random-values (1.7.2):
-    - React-Core
   - react-native-nfc-manager (3.11.0):
     - React
+  - react-native-randombytes (3.6.1):
+    - React-Core
   - React-perflogger (0.66.3)
   - React-RCTActionSheet (0.66.3):
     - React-Core/RCTActionSheetHeaders (= 0.66.3)
@@ -402,8 +402,8 @@ DEPENDENCIES:
   - React-jsinspector (from `../node_modules/react-native/ReactCommon/jsinspector`)
   - React-logger (from `../node_modules/react-native/ReactCommon/logger`)
   - react-native-camera (from `../node_modules/react-native-camera`)
-  - react-native-get-random-values (from `../node_modules/react-native-get-random-values`)
   - react-native-nfc-manager (from `../node_modules/react-native-nfc-manager`)
+  - react-native-randombytes (from `../node_modules/react-native-randombytes`)
   - React-perflogger (from `../node_modules/react-native/ReactCommon/reactperflogger`)
   - React-RCTActionSheet (from `../node_modules/react-native/Libraries/ActionSheetIOS`)
   - React-RCTAnimation (from `../node_modules/react-native/Libraries/NativeAnimation`)
@@ -476,10 +476,10 @@ EXTERNAL SOURCES:
     :path: "../node_modules/react-native/ReactCommon/logger"
   react-native-camera:
     :path: "../node_modules/react-native-camera"
-  react-native-get-random-values:
-    :path: "../node_modules/react-native-get-random-values"
   react-native-nfc-manager:
     :path: "../node_modules/react-native-nfc-manager"
+  react-native-randombytes:
+    :path: "../node_modules/react-native-randombytes"
   React-perflogger:
     :path: "../node_modules/react-native/ReactCommon/reactperflogger"
   React-RCTActionSheet:
@@ -544,8 +544,8 @@ SPEC CHECKSUMS:
   React-jsinspector: d9c8eb0b53f0da206fed56612b289fec84991157
   React-logger: e522e76fa3e9ec3e7d7115b49485cc065cf4ae06
   react-native-camera: 3eae183c1d111103963f3dd913b65d01aef8110f
-  react-native-get-random-values: 30b3f74ca34e30e2e480de48e4add2706a40ac8f
   react-native-nfc-manager: e74f24f05274fbfdfe51e46e72d62d5ae460c724
+  react-native-randombytes: 421f1c7d48c0af8dbcd471b0324393ebf8fe7846
   React-perflogger: 73732888d37d4f5065198727b167846743232882
   React-RCTActionSheet: 96c6d774fa89b1f7c59fc460adc3245ba2d7fd79
   React-RCTAnimation: 8940cfd3a8640bd6f6372150dbdb83a79bcbae6c
@@ -565,4 +565,4 @@ SPEC CHECKSUMS:
 
 PODFILE CHECKSUM: 4c7b4d27c8dd852ad49d40ab4c7405d40774249d
 
-COCOAPODS: 1.11.2
+COCOAPODS: 1.11.3
