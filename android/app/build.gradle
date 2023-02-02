@@ -131,10 +131,10 @@ android {
     compileSdkVersion rootProject.ext.compileSdkVersion
 
     defaultConfig {
-        applicationId "art.encrypto.client"
+        applicationId "com.peersyst.client"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
-        versionCode 1
+        versionCode 10
         versionName "1.0"
         missingDimensionStrategy 'react-native-camera', 'general'
     }

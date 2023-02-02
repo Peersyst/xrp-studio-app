@@ -1,4 +1,4 @@
-package art.encrypto.client;
+package com.peersyst.encryptoart;
 
 import com.facebook.react.ReactActivity;
 
