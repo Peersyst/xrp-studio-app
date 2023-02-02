@@ -1,0 +1,1 @@
+google_play.jks - keystore used to sign release builds for Google Play, password "keystore"
