@@ -409,7 +409,7 @@ const App: () => Node = () => {
               borderColor: 'black',
               fontSize: 16,
               paddingHorizontal: 10,
-              height: 40,
+              height: 45,
             }}
             editable={!isWorking}
           />
