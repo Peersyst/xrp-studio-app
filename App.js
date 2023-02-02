@@ -296,7 +296,7 @@ const App: () => Node = () => {
   }
 
   const dimensions = Dimensions.get('window');
-  const width = dimensions.width - 80;
+  const width = dimensions.width - 180;
   const imageHeight = Math.round((width * 439) / 1401);
   const imageWidth = width;
   let verifyButtonStyle = 'normal';
@@ -315,31 +315,38 @@ const App: () => Node = () => {
   if (viewMode === 'main') {
     viewContent = (
       <View>
-        <View style={{paddingTop: 30, flexDirection: 'row'}}>
+        <View
+          style={{
+            paddingTop: 30,
+            flexDirection: 'row',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+          }}>
           <TextInput
             style={{
-              backgroundColor: 'white',
-              color: 'black',
+              backgroundColor: '#21272C',
+              color: 'white',
               borderRadius: 4,
               elevation: 3,
-              borderColor: 'black',
               fontSize: 16,
-              padding: 16,
+              padding: 10,
               width: dimensions.width - 60 - 80 - 10,
               height: 80,
             }}
             multiline={true}
-            placeholder={'Paste public key or scan QR code...'}
-            placeholderTextColor={'#000000'}
+            placeholder={'Paste a public key or scan a QR code...'}
+            placeholderTextColor={'#CCCCCC'}
             onChangeText={setPublicKey}
             value={publicKey}
           />
-          <TouchableOpacity onPress={() => setViewMode('scan')}>
-            <Image
-              source={require('./assets/qr.png')}
-              style={{marginLeft: 10, width: 80, height: 80}}
-            />
-          </TouchableOpacity>
+          <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+            <TouchableOpacity onPress={() => setViewMode('scan')}>
+              <Image
+                source={require('./assets/qr.png')}
+                style={{marginLeft: 10, width: 50, height: 50}}
+              />
+            </TouchableOpacity>
+          </View>
         </View>
         <View style={{paddingTop: 30}}>
           <SButton
@@ -384,7 +391,9 @@ const App: () => Node = () => {
     viewContent = (
       <View>
         <View style={{paddingTop: 30}}>
-          <Text style={{color: 'white'}}>{actionText}</Text>
+          <View style={{padding: 10, backgroundColor: '#21272C', borderRadius: 6}}>
+            <Text style={{color: 'white'}}>{actionText}</Text>
+          </View>
           <Text style={{paddingTop: 15, paddingBottom: 15, color: 'white'}}>
             {passwordText}
           </Text>
@@ -393,13 +402,14 @@ const App: () => Node = () => {
             onChangeText={setErasePassword}
             value={erasePassword}
             style={{
-              backgroundColor: 'white',
-              color: 'black',
+              backgroundColor: '#21272C',
+              color: 'white',
               borderRadius: 4,
               elevation: 3,
               borderColor: 'black',
               fontSize: 16,
               paddingHorizontal: 10,
+              height: 45,
             }}
             editable={!isWorking}
           />
@@ -415,7 +425,7 @@ const App: () => Node = () => {
             <SButton
               onPress={() => btnCancelPassword()}
               title={'CANCEL'}
-              btnStyle={'normal'}
+              btnStyle={'cancel'}
             />
           </View>
         </View>
@@ -460,8 +470,17 @@ const App: () => Node = () => {
           />
         </View>
         <TouchableOpacity onPress={() => copyPublicKeyToClipboard()}>
-          <View style={{backgroundColor: 'white', marginTop: 30, height: 120}}>
-            <Text style={{color: 'black', padding: 15}}>{tagsPublicKey}</Text>
+          <View
+            style={{
+              flexDirection: 'column',
+              justifyContent: 'center',
+              alignItems: 'center',
+              backgroundColor: '#21272C',
+              marginTop: 30,
+              height: 120,
+              borderRadius: 6,
+            }}>
+            <Text style={{color: 'white', padding: 15}}>{tagsPublicKey}</Text>
           </View>
         </TouchableOpacity>
       </View>
@@ -472,33 +491,38 @@ const App: () => Node = () => {
     <SafeAreaView style={{flex: 1}}>
       <ScrollView
         contentInsetAdjustmentBehavior="automatic"
-        style={{flex: 0.8, backgroundColor: '#141A1F'}}>
-        <View style={{backgroundColor: '#141A1F', padding: 40}}>
-          <Image
-            source={require('./assets/logo.png')}
-            style={{height: imageHeight, width: imageWidth}}
-          />
-        </View>
+        style={{
+          flex: 0.8,
+          backgroundColor: '#141A1F',
+        }}>
+        <View>
+          <View style={{flex: 1, flexDirection: 'row', justifyContent: 'center', alignItems: 'center', backgroundColor: '#141A1F', padding: 40, margin: 20 }}>
+            <Image
+              source={require('./assets/logo.png')}
+              style={{height: imageHeight, width: imageWidth}}
+            />
+          </View>
 
-        <View style={{padding: 30, paddingTop: 0}}>
-          {viewContent}
+          <View style={{padding: 30, paddingTop: 0}}>
+            {viewContent}
 
-          <View>
-            <Text
-              style={{
-                color: 'white',
-                width: '100%',
-                textAlign: 'center',
-                marginTop: 30,
-                fontSize: 16,
-              }}>
-              Copyright © EncryptoArt Systems S.L.
-            </Text>
+            <View>
+              <Text
+                style={{
+                  color: 'white',
+                  width: '100%',
+                  textAlign: 'center',
+                  marginTop: 30,
+                  fontSize: 16,
+                }}>
+                Copryright © XRP Studio 2023
+              </Text>
+            </View>
           </View>
         </View>
       </ScrollView>
       {viewMode !== 'password' ? (
-        <View style={{flex: 0.2, flexDirection: 'row'}}>
+        <View style={{flex: 0.15, flexDirection: 'row', justifyContent: 'center', alignItems: 'center'}}>
           <TouchableOpacity
             onPress={async () => {
               await cancelNfcOperation();
@@ -508,16 +532,18 @@ const App: () => Node = () => {
             }}>
             <View
               style={{
+                borderLeftWidth: 0,
+                borderBottomWidth: 0,
                 borderWidth: 2,
                 borderStyle: 'solid',
-                borderColor: 'white',
+                borderColor: '#008CFF',
                 width: dimensions.width * 0.5,
                 height: '100%',
                 justifyContent: 'center',
                 alignItems: 'center',
                 backgroundColor: '#141A1F',
               }}>
-              <Text style={{fontSize: 24, fontWeight: 'bold', color: 'white'}}>
+              <Text style={{fontSize: 20, fontWeight: 'bold', color: 'white'}}>
                 VERIFY TAG
               </Text>
             </View>
@@ -531,17 +557,16 @@ const App: () => Node = () => {
             }}>
             <View
               style={{
-                borderWidth: 2,
+                borderTopWidth: 2,
                 borderStyle: 'solid',
-                borderLeftWidth: 0,
-                borderColor: 'white',
+                borderColor: '#008CFF',
                 width: dimensions.width * 0.5,
                 height: '100%',
                 justifyContent: 'center',
                 alignItems: 'center',
                 backgroundColor: '#141A1F',
               }}>
-              <Text style={{fontSize: 24, fontWeight: 'bold', color: 'white'}}>
+              <Text style={{fontSize: 20, fontWeight: 'bold', color: 'white'}}>
                 CREATE TAG
               </Text>
             </View>
