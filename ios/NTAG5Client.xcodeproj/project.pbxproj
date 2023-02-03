@@ -492,7 +492,7 @@
 				DEVELOPMENT_TEAM = QQVTSZYSWZ;
 				ENABLE_BITCODE = NO;
 				INFOPLIST_FILE = NTAG5Client/Info.plist;
-				INFOPLIST_KEY_CFBundleDisplayName = "Encrypto Art";
+				INFOPLIST_KEY_CFBundleDisplayName = "XRP Studio";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -523,7 +523,7 @@
 				CURRENT_PROJECT_VERSION = 10;
 				DEVELOPMENT_TEAM = QQVTSZYSWZ;
 				INFOPLIST_FILE = NTAG5Client/Info.plist;
-				INFOPLIST_KEY_CFBundleDisplayName = "Encrypto Art";
+				INFOPLIST_KEY_CFBundleDisplayName = "XRP Studio";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
